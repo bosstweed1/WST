@@ -1,0 +1,29 @@
+TODO:
+
+coins: more coins more points, keep a tally of a lot of coins special effect at different amounts
+
+effets: ink the fire from below
+		shoot the rocks from above
+		slow down time
+		shield
+		
+		
+		
+		hearthstone sound effets:
+		wild pyro - certain level, sooo much fire that you HAVE to ink
+		defender of argus- shield
+		leper gnome - ink
+		lord of the arena - death?
+		violet teacher - rules
+		
+		
+		
+		
+------1.) interact with walls
+------2.) draw coins in patterns
+------3.) interact with coins
+------4.) set scoring on the top of the screen
+------5.) assign score values
+6.) interact with rocks
+7.) death sends back to main menu
+8.) pause -> resume restart quit to main
