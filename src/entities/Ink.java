@@ -2,12 +2,12 @@ package entities;
 
 import org.newdawn.slick.opengl.Texture;
 
-public class Bullet extends Shape
+public class Ink extends Shape
 {
 	boolean removeMe = false;
 	private int effectType = -1;
-	private int shapeType = 11; 
-	public Bullet ( double x, double y, double width, double height )
+	private int shapeType = 13;
+	public Ink ( double x, double y, double width, double height )
 	{
 		super( x, y, width, height );
 		this.setColor( 1, 1, 1 );
@@ -16,11 +16,9 @@ public class Bullet extends Shape
 	@Override
 	public boolean intersects(Shape other)
 	{
-		//System.out.println(" bullet intersect ");
 		boolean intersect = false;
 		if ( other != null )
 		{
-			
 			double p1y = this.getY();
 			double p1x = this.getX();
 			double p2x = this.getX() + this.getWidth();
@@ -34,7 +32,6 @@ public class Bullet extends Shape
 			{
 				intersect = true;
 				//other.interact( this );
-				System.out.println("INTERSECTED");
 			} 
 		}
 		else

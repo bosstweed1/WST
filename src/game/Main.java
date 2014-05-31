@@ -9,7 +9,9 @@ import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
 import java.awt.Font;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+
+import javax.swing.JOptionPane;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -36,13 +40,12 @@ import entities.Coin;
 import entities.Death;
 import entities.Effect;
 import entities.Gun;
+import entities.Ink;
+import entities.Inker;
 import entities.Player;
 import entities.Shape;
 import entities.Shield;
 import entities.Wall;
-
-
-
 
 public class Main 
 {
@@ -58,7 +61,8 @@ public class Main
 	
 	private static State state = State.INTRO;
 	
-	private ArrayList<String> leaderboard = new ArrayList<String>();
+	private ArrayList<Integer> leaderboard = new ArrayList<Integer>();
+	private ArrayList<String> leaderboardNames = new ArrayList<String>();
 	
 	// Main menu variables
 	
@@ -72,21 +76,25 @@ public class Main
 	private Player thePlayer;
 	private Shield theShield;
 	private Gun theGun;
+	private Inker theInker;
 	private Effect [] theEffect = new Effect[1];
 	private Coin [] coinObjects = new Coin[5];
-	private Bullet [] bulletObjects = new Bullet[100];
+	private Bullet [] bulletObjects = new Bullet[5];
+	private Ink [] inkObjects = new Ink[5];
+	private int inkIndex = 0;
 	private int bulletIndex = 0;
 	private ArrayList<Shape[]> shapes = new ArrayList<Shape[]>();
 	
 	private static Map<Integer,String> coinPatternMap = createCoinPatternMap();
 
-	
+	// Movement Variables
 	private int previousDirection = 1;
 	private double initialSpeed = 6;
 	private double degenRate = .95;
 	private double minSpeed = 3;
+	
+	// Score Variables
 	private int playerScore = 0;
-	private String aEffect = null;
 	private int bonusTotal = 0;
 	private int bonusStreak = 0;
 	private boolean checkTotal = true;
@@ -95,16 +103,13 @@ public class Main
 	private String[] effectStrings = new String[3];
 	
 	
-	
 	// Pause variables
 	
 	private int P_row = 1;
 	
 	// Lose variables
-	
 	private int L_row = 1;
-	
-	
+	private boolean enteredName = false;
 	private final int FONT_SIZE = 14;
 	
 	
@@ -174,7 +179,21 @@ public class Main
 			Scanner fScan = new Scanner( new File( fileName ) );
 			while ( fScan.hasNextLine() )
 			{
-				leaderboard.add( fScan.nextLine() );
+				leaderboard.add( Integer.parseInt( fScan.nextLine() ) );
+		    }       
+		}
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		
+		fileName = "leaderboardNames.txt";
+		try
+		{
+			Scanner fScan = new Scanner( new File( fileName ) );
+			while ( fScan.hasNextLine() )
+			{
+				leaderboardNames.add( fScan.nextLine() );
 		    }       
 		}
 		catch (IOException e) 
@@ -305,6 +324,108 @@ public class Main
 		uniFont.drawString( WIDTH / 2, ( 2 * HEIGHT / 8 ), "Restart" );
 		uniFont.drawString( WIDTH / 2, ( 3 * HEIGHT / 8 ), "Back to Main Menu" );
 		
+		checkHighScore();
+		
+		
+		
+	}
+	
+	/* checkHighScore
+	 * 		checks if the previous game played was a high score, if so adds the score and username to the leaderboard
+	 * 
+	 */
+	
+	private void checkHighScore()
+	{
+		
+		leaderboard.add(playerScore);
+		
+		// Find out if the score was a highscore, and where it falls
+		if ( playerScore > leaderboard.get(4) && !enteredName )
+		{
+			enteredName = true;
+			// pop up to add name
+			String name = JOptionPane.showInputDialog("Congrats! You've Made the Leaderboard! Enter your name: ");
+			if ( name == null )
+			{
+				name = "iCantType";
+			}
+			
+			leaderboard.set(4, playerScore );
+			leaderboardNames.set(4, name );
+			
+			// I'm a child...
+			if ( playerScore > leaderboard.get(3) )
+			{
+				leaderboard.set(4, leaderboard.get(3) );
+				leaderboardNames.set(4, leaderboardNames.get(3) );
+				
+				leaderboardNames.set(3, name );
+				leaderboard.set(3, playerScore);
+				
+				if ( playerScore > leaderboard.get(2) )
+				{
+					leaderboard.set(3, leaderboard.get(2) );
+					leaderboardNames.set(3, leaderboardNames.get(2) );
+					
+					leaderboardNames.set(2, name );
+					leaderboard.set(2, playerScore);
+					if ( playerScore > leaderboard.get(1) )
+					{
+						leaderboard.set(2, leaderboard.get(1) );
+						leaderboardNames.set(2, leaderboardNames.get(1) );
+						
+						leaderboardNames.set(1, name );
+						leaderboard.set(1, playerScore);
+						if ( playerScore > leaderboard.get(0) )
+						{
+							leaderboard.set(1, leaderboard.get(0) );
+							leaderboardNames.set(1, leaderboardNames.get(0) );
+							
+							leaderboardNames.set(0, name );
+							leaderboard.set(0, playerScore);
+						}
+					}
+				}
+			}
+			
+			saveLeaderboard();
+		}
+		
+		
+	}
+	
+	/* saveLeaderboard
+	 * 		saves current leaderboard to appropriate files
+	 * 		
+	 */
+	private void saveLeaderboard() 
+	{
+		try 
+		{
+			FileOutputStream fos = new FileOutputStream( "leaderboard.txt" );
+		    DataOutputStream dos = new DataOutputStream( fos );
+		    
+		    FileOutputStream fos1 = new FileOutputStream( "leaderboardNames.txt" );
+		    DataOutputStream dos1 = new DataOutputStream( fos1 );
+		    
+		    // Write main information
+		    for( int i = 0; i < 5; i++ )
+		    	dos.writeBytes( leaderboard.get(i) + "\n" );
+		    
+		    for( int i = 0; i < 5; i++ )
+		    	dos1.writeBytes( leaderboardNames.get(i) + "\n" );
+		    
+		    
+		    dos.close();
+		    fos.close();
+		    dos1.close();
+		    fos1.close();
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	/* drawIntro
@@ -340,7 +461,7 @@ public class Main
 		
 		for ( int i = 0; i < 5; i++ )
 		{
-			uniFont.drawString( WIDTH / 2, ( ( 2 + i ) * HEIGHT / 8 ), leaderboard.get( i ) );
+			uniFont.drawString( WIDTH / 2, ( ( 2 + i ) * HEIGHT / 8 ), leaderboardNames.get(i) + " - " + leaderboard.get( i ));
 			
 		}
 	}
@@ -351,14 +472,49 @@ public class Main
 	 */
 	private void drawLevel() 
 	{
+		drawInfoBar();
+		
+		drawAndUpdatePlayerAndEffects();
+		
+		drawAndUpdateGameShapes();
+	}
+	
+	/* drawInfoBar
+	 * 		Renders the top info during the game
+	 * 		
+	 */
+	private void drawInfoBar()
+	{
 		uniFont.drawString( 32, 3, "Score: " + playerScore );
 		uniFont.drawString( WIDTH / 3, 3, "Coins: " + thePlayer.getCoinTotal() );
 		
-		if ( thePlayer.getEffect() != -1 )
-			uniFont.drawString( 2 * ( WIDTH / 3), 3, "ActiveEffect: " + aEffect );
-		else
-			uniFont.drawString( 2 * ( WIDTH / 3), 3, "ActiveEffect: None" );
+		uniFont.drawString( 2 * ( WIDTH / 3), 3, "ActiveEffects: ");
 		
+		if ( thePlayer.hasShield() )
+			uniFont.drawString( 2 * ( WIDTH / 3), 20, "Shield: 1");
+		else
+			uniFont.drawString( 2 * ( WIDTH / 3), 20, "Shield: 0");
+		
+		if ( thePlayer.hasGun() )
+			uniFont.drawString( 2 * ( WIDTH / 3), 37, "Gun: 1");
+		else
+			uniFont.drawString( 2 * ( WIDTH / 3), 37, "Gun: 0");
+		
+		if ( thePlayer.hasInk() )
+			uniFont.drawString( 2 * ( WIDTH / 3), 54, "Ink: 1");
+		else
+			uniFont.drawString( 2 * ( WIDTH / 3), 54, "Ink: 0");
+		
+	}
+	
+	
+	
+	/* drawPlayerAndEffects
+	 * 		Renders the player and any active effects
+	 * 		
+	 */
+	private void drawAndUpdatePlayerAndEffects()
+	{
 		
 		thePlayer.draw();
 		thePlayer.drawHitbox();
@@ -373,6 +529,12 @@ public class Main
 		{
 			theGun.draw();
 			theGun.drawHitbox();
+		}
+		
+		if ( theInker != null )
+		{
+			theInker.draw();
+			theInker.drawHitbox();
 		}
 		
 		if ( theEffect[0] != null && theEffect[0].getY() > HEIGHT )
@@ -391,29 +553,74 @@ public class Main
 			}
 		}
 		
-		for ( int i = 0; i < bulletObjects.length; i++ )
-		{
-			if ( bulletObjects[i] == null )
-				break;
-			
-			bulletObjects[i].setY( bulletObjects[i].getY() - 4 );
-			
-			bulletObjects[i].draw();
-			bulletObjects[i].drawHitbox();
-			
-			if ( bulletObjects[i].getY() > -4 )
-			{
-				bulletObjects[i] = null;
-				bulletIndex--;
-			}
-			
-			
-		}
+		thePlayer.setX( thePlayer.getX() + thePlayer.getPlayerMovementAmt() * thePlayer.getDir() );
 		
+		if ( thePlayer.hasShield() )
+			theShield.setX( thePlayer.getX() - 3 );
+		else
+			theShield = null;
+		
+		if ( thePlayer.hasGun() )
+			theGun.setX( thePlayer.getX() - 3 );
+		else
+			theGun = null;
+		
+		if ( thePlayer.hasInk() )
+			theInker.setX( thePlayer.getX() - 3 );
+		else
+			theInker = null;
+		
+		previousDirection = thePlayer.getDir();
+		
+		
+		if ( previousDirection == thePlayer.getDir() )
+			thePlayer.setPlayerMovementAmt( thePlayer.getPlayerMovementAmt() * degenRate );
+		else
+			thePlayer.setPlayerMovementAmt( initialSpeed );
+		
+		if ( thePlayer.getPlayerMovementAmt() < minSpeed )
+			thePlayer.setPlayerMovementAmt( minSpeed );
+		
+	}
+	
+	/* drawAndUpdateGameShapes
+	 * 		Renders rocks, fire, bullets, ink, walls, and updates positions
+	 * 		
+	 */
+	private void drawAndUpdateGameShapes()
+	{
 		// Manage coins and rocks
 		for ( int i = 0; i < 5; i++ )
 		{		
+			if ( bulletObjects[i] != null )
+			{
+				bulletObjects[i].setY( bulletObjects[i].getY() - 4 );
 				
+				bulletObjects[i].draw();
+				bulletObjects[i].drawHitbox();
+				
+				if ( bulletObjects[i].getY() < -4 )
+				{
+					bulletObjects[i] = null;
+					bulletIndex--;
+				}
+			}
+			
+			if ( inkObjects[i] != null )
+			{
+				
+				inkObjects[i].setY( inkObjects[i].getY() + 1 );
+				
+				inkObjects[i].draw();
+				inkObjects[i].drawHitbox();
+				
+				if ( inkObjects[i].getY() > HEIGHT + 16 )
+				{
+					inkObjects[i] = null;
+					inkIndex--;
+				}
+			}
+			
 			// Create rock objects
 			if ( rockObjects[i] == null || rockObjects[4].getY() > HEIGHT )
 				setDeathShape( 1, rockObjects );
@@ -433,10 +640,7 @@ public class Main
 			coinObjects[i].setY( coinObjects[i].getY() + 2 );
 			rockObjects[i].setY( rockObjects[i].getY() + 3 );
 			fireObjects[i].setY( fireObjects[i].getY() - 1 );
-			
-			
-			
-			
+
 			// Draw coins
 			if ( !coinObjects[i].getRemoval() )
 			{
@@ -445,12 +649,19 @@ public class Main
 			}
 			
 			// Draw rocks
-			rockObjects[i].draw();
-			rockObjects[i].drawHitbox();
+			if ( !rockObjects[i].getSeen() )
+			{
+				rockObjects[i].draw();
+				rockObjects[i].drawHitbox();
+			}
 			
 			// Draw fire objects
-			fireObjects[i].draw();
-			fireObjects[i].drawHitbox();
+			if ( !fireObjects[i].getSeen() )
+			{
+				fireObjects[i].draw();
+				fireObjects[i].drawHitbox();
+			}
+			
 		}
 		
 		wallObjects[0].draw();
@@ -459,58 +670,51 @@ public class Main
 		wallObjects[1].draw();
 		wallObjects[1].drawHitbox();
 		
-		
-		if ( previousDirection == thePlayer.getDir() )
-			thePlayer.setPlayerMovementAmt( thePlayer.getPlayerMovementAmt() * degenRate );
-		else
-			thePlayer.setPlayerMovementAmt( initialSpeed );
-		
-		if ( thePlayer.getPlayerMovementAmt() < minSpeed )
-			thePlayer.setPlayerMovementAmt( minSpeed );
-		
-		/*
-		System.out.println("speed: " + thePlayer.getPlayerMovementAmt() );
-		System.out.println("x: " + thePlayer.getX() );
-		System.out.println("dir:" + thePlayer.getDir() );
-		*/
-		thePlayer.setX( thePlayer.getX() + thePlayer.getPlayerMovementAmt() * thePlayer.getDir() );
-		
-		if ( thePlayer.getEffect() == 0 )
-			theShield.setX( thePlayer.getX() );
-		
-		previousDirection = thePlayer.getDir();
 	}
 	
 	
+	/* setNewEffect
+	 * 		creates a new effect block in the game
+	 * 		
+	 */
 	private void setNewEffect() 
 	{
 		Random rng = new Random();
 		
-		Integer xPos = Math.abs( rng.nextInt() % WIDTH - 64 ) + 32;
+		Integer xPos = Math.abs( rng.nextInt() % (WIDTH - 80 ) );
 		
 		if ( thePlayer.getEffectStatus() )
-			theEffect[0] = new Effect( xPos, -16, 16, 16, (int)(thePlayer.getX() % 2) );
+			theEffect[0] = new Effect( xPos + 32, -16, 16, 16, Math.abs( rng.nextInt() % 3 ) );
 			
 		
 	}
+	
+	/* setDeathShape
+	 * 		Creates a new shape of rocks/fire for the game TODO: add massive here
+	 * 		
+	 */
 	private void setDeathShape( int type, Shape [] array ) 
 	{
 		Random rng = new Random();
 		
 		for ( int i = 0; i < 5; i++ )
 		{
-		
-			Integer xPos = Math.abs( rng.nextInt() % WIDTH - 64 ) + 32;
+			Integer rand = rng.nextInt();
+			Integer xPos = Math.abs( rand % ( WIDTH - 80 ) );
 			
-			if ( xPos > WIDTH - 48 )
-				xPos -= 48;
 			// If we want a new random rock 
 			if ( type == 1)
-				array[i] = new Death(  xPos, (-16) - i * (HEIGHT / 5), 16, 16 );
+				array[i] = new Death(  xPos + 32, (-16) - i * (HEIGHT / 5), 16, 16, 1 );
 			else
-				array[i] = new Death(  xPos, HEIGHT + 16 + i * (HEIGHT / 5), 16, 16 );
+				array[i] = new Death(  xPos + 32, HEIGHT + 16 + i * (HEIGHT / 5), 16, 16, 0 );
+				
 		}
 	}
+	
+	/* setCoinShape
+	 * 		adds a new coin pattern shape in the game
+	 * 		
+	 */
 	private void setCoinShape( boolean init ) 
 	{
 		Random rng = new Random();
@@ -684,11 +888,8 @@ public class Main
 	 */
 	private void input()
 	{
-		
-	
 		switch ( state )
 		{
-		
 		
 		case INTRO:
 			
@@ -744,12 +945,26 @@ public class Main
 				P_row = 1;
 			}
 			
-			if ( pressed( Keyboard.KEY_SPACE) && theGun != null )
+			if ( pressed( Keyboard.KEY_SPACE) )
 			{
-				bulletObjects[bulletIndex] = theGun.shoot();
-				bulletIndex++;
-			}
+				if ( theGun != null && bulletIndex < 4 )
+				{
+					if ( bulletObjects[bulletIndex] == null )
+					{
+						bulletObjects[bulletIndex] = theGun.shoot();
+						bulletIndex++;
+					}
+				}
 				
+				if ( theInker != null && inkIndex < 4 )
+				{
+					if ( inkObjects[inkIndex] == null )
+					{
+						inkObjects[inkIndex] = theInker.shoot();
+						inkIndex++;
+					}
+				}
+			}
 			
 		case PAUSE:
 			if ( pressed( Keyboard.KEY_UP ) && P_row > 1)
@@ -817,6 +1032,24 @@ public class Main
 		theEffect[0] = null;
 		setCoinShape( true );
 		theShield = null;
+		theGun = null;
+		theInker = null;
+		inkIndex = 0;
+		enteredName = false;
+		
+		bulletIndex = 0;
+		bulletObjects[0] = null;
+		bulletObjects[1] = null;
+		bulletObjects[2] = null;
+		bulletObjects[3] = null;
+		bulletObjects[4] = null;
+		
+		inkObjects[0] = null;
+		inkObjects[1] = null;
+		inkObjects[2] = null;
+		inkObjects[3] = null;
+		inkObjects[4] = null;
+				
 		
 		effectStrings[0] = "Shield"; //MY SHIELD...FOR ARGUS!
 		effectStrings[1] = "Gun"; //I've got a HUGE gun
@@ -911,6 +1144,7 @@ public class Main
 				
 			// Iterate through each shape array
 			for ( Shape[] s : shapes )
+			{
 				// Iterate through each object in the current shape array
 				for ( Shape thisShape : s )
 				{
@@ -922,32 +1156,53 @@ public class Main
 							theShield = new Shield ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6 );
 						else if ( thisShape.getShapeType() == 4 )
 							theGun = new Gun ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6 );
+						else if ( thisShape.getShapeType() == 5 )
+							theInker = new Inker ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6 );
 
 					}
+					
+					// Check bullet intersections
+					if ( thisShape != null && thisShape.getShapeType() == 2 )
+					{
+						// Used to decrement bullet index after the loop
+						int counter = 0;
+						for ( int j = 0; j < 5; j++ )
+						{
+							if ( bulletObjects[j] != null && !thisShape.getSeen() && 
+									 bulletObjects[j].intersects( thisShape ) )
+							{
+								System.out.println("Removed object");
+								thisShape.setSeen( true );
+								bulletObjects[j] = null;
+								counter++;
+							}
+						}
+						bulletIndex -= counter;
+						
+						counter = 0;
+						for ( int j = 0; j < 5; j++ )
+						{
+							if ( inkObjects[j] != null && !thisShape.getSeen() &&
+									 inkObjects[j].intersects( thisShape ) )
+							{
+								System.out.println("Removed object");
+								thisShape.setSeen( true );
+								inkObjects[j] = null;
+								counter++;
+							}
+						}
+						inkIndex -= counter;
+					}
+					
 				}
-			
+			}
+			// points based on rocks/fire destroyed?
 			playerScore = thePlayer.getCoinTotal() + bonusTotal;
 			
+			// TODO: better condition for this
 			if ( playerScore > 1 && theEffect[0] == null)
 			{
 				thePlayer.setEffectStatus( true );
-				
-			}
-			else
-			{
-				if ( thePlayer.getEffect() != -1 )
-				{
-					aEffect = effectStrings[ thePlayer.getEffect() ];
-				}
-				else if ( thePlayer.getEffect () == 0 )
-				{
-					theShield = null;
-				}
-				else if ( thePlayer.getEffect() == 1 )
-				{
-					theGun = null;
-				}
-						
 			}
 			
 		}

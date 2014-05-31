@@ -12,6 +12,11 @@ public class Player extends Shape
 	private boolean readyForEffect = false;
 	private int currEffect = -1;
 	private int shapeType = 7;
+	
+	// Booleans for effects
+	private boolean shieldFlag = false;
+	private boolean gunFlag = false;
+	private boolean inkFlag = false;
 
 	public Shape groundPiece;
 
@@ -146,12 +151,47 @@ public class Player extends Shape
 	public void setEffect( int type )
 	{
 		this.currEffect = type;
-		
+		if ( type == 0 )
+			setShield( true );
+		else if ( type == 1 )
+			setGun( true );
+		else if ( type == 2 )
+			setInk( true );
 	}
 	
 	public int getEffect()
 	{
 		return this.currEffect;
+	}
+	
+	public boolean hasGun()
+	{
+		return gunFlag;
+	}
+	
+	public boolean hasShield()
+	{
+		return shieldFlag;
+	}
+	
+	public boolean hasInk()
+	{
+		return inkFlag;
+	}
+	
+	public void setGun( boolean flag )
+	{
+		this.gunFlag = flag;
+	}
+	
+	public void setShield( boolean flag)
+	{
+		this.shieldFlag = flag;
+	}
+	
+	public void setInk( boolean flag )
+	{
+		this.inkFlag = flag;
 	}
 	
 	

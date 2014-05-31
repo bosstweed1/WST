@@ -30,6 +30,8 @@ public abstract class Shape
 	
 	private Texture [] myTextureArray;
 
+	private boolean alreadySeen = false;
+	
 	public Shape ( double x, double y, double width, double height )
 	{
 		this.x = x;
@@ -201,7 +203,16 @@ public abstract class Shape
 		this.g = gIn;
 		this.b = bIn;
 	}
+	
+	public void setSeen( boolean seen )
+	{
+		this.alreadySeen = seen;
+	}
 
+	public boolean getSeen()
+	{
+		return this.alreadySeen;
+	}
 	
 	
 	//-- End AbstractMoveableEntity

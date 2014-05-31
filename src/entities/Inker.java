@@ -2,12 +2,12 @@ package entities;
 
 import org.newdawn.slick.opengl.Texture;
 
-public class Gun extends Shape
+public class Inker extends Shape
 {
 	boolean removeMe = false;
 	private int effectType = -1;
-	private int shapeType = 10;
-	public Gun ( double x, double y, double width, double height )
+	private int shapeType = 12;
+	public Inker ( double x, double y, double width, double height )
 	{
 		super( x, y, width, height );
 		this.setColor( 1, .5, .5 );
@@ -48,13 +48,13 @@ public class Gun extends Shape
 		this.removeMe = removal;
 	}
 	
-	public Bullet shoot()
+	public Ink shoot()
 	{
 		
-		Bullet b = new Bullet( this.getX() + (this.getWidth() / 2) - 2, this.getY(), 4, 4 );
-		
-		return b;
+		Ink i = new Ink( this.getX() + (this.getWidth() / 2) - 8 , this.getY(), 16, 16 );
+		System.out.println("created ink");
+		return i;
 		
 	}
-	
 }
+	
