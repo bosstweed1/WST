@@ -5,12 +5,12 @@ import org.newdawn.slick.opengl.Texture;
 public class Gun extends Shape
 {
 	boolean removeMe = false;
-	private int effectType = -1;
 	private int shapeType = 10;
-	public Gun ( double x, double y, double width, double height )
+	public Gun ( double x, double y, double width, double height, Texture[] textureString )
 	{
 		super( x, y, width, height );
-		this.setColor( 1, .5, .5 );
+		this.myTextureArray = textureString;
+		this.setColor( 1, 1, 1 );
 	}
 
 	@Override
@@ -48,10 +48,10 @@ public class Gun extends Shape
 		this.removeMe = removal;
 	}
 	
-	public Bullet shoot()
+	public Bullet shoot( Texture [] textureString)
 	{
 		
-		Bullet b = new Bullet( this.getX() + (this.getWidth() / 2) - 2, this.getY(), 4, 4 );
+		Bullet b = new Bullet( this.getX() + (this.getWidth() / 2) - 2, this.getY(), 4, 4, textureString );
 		
 		return b;
 		

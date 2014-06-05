@@ -5,12 +5,12 @@ import org.newdawn.slick.opengl.Texture;
 public class Inker extends Shape
 {
 	boolean removeMe = false;
-	private int effectType = -1;
 	private int shapeType = 12;
-	public Inker ( double x, double y, double width, double height )
+	public Inker ( double x, double y, double width, double height, Texture[] textureString )
 	{
 		super( x, y, width, height );
-		this.setColor( 1, .5, .5 );
+		this.myTextureArray = textureString;
+		this.setColor( 1, 1, 1 );
 	}
 
 	@Override
@@ -48,11 +48,10 @@ public class Inker extends Shape
 		this.removeMe = removal;
 	}
 	
-	public Ink shoot()
+	public Ink shoot(Texture [] textureString)
 	{
 		
-		Ink i = new Ink( this.getX() + (this.getWidth() / 2) - 8 , this.getY(), 16, 16 );
-		System.out.println("created ink");
+		Ink i = new Ink( this.getX() + (this.getWidth() / 2) - 8 , this.getY() + this.getHeight(), 16, 16, textureString );
 		return i;
 		
 	}

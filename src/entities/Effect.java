@@ -8,10 +8,11 @@ public class Effect extends Shape
 	boolean removeMe = false;
 	private int effectType = -1;
 	private int shapeType = 3;
-	public Effect ( double x, double y, double width, double height, int type )
+	public Effect ( double x, double y, double width, double height, int type, Texture [] textureString )
 	{
 		super( x, y, width, height );
 		this.setColor( 0, 1, 1 );
+		this.myTextureArray = textureString;
 		this.effectType = type;
 		/* Type list
 		 * 0- shield

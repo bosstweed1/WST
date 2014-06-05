@@ -7,9 +7,10 @@ public class Shield extends Shape
 	boolean removeMe = false;
 	private int effectType = -1;
 	private int shapeType = 8;
-	public Shield ( double x, double y, double width, double height )
+	public Shield ( double x, double y, double width, double height, Texture [] textureString )
 	{
 		super( x, y, width, height );
+		this.myTextureArray = textureString;
 		this.setColor( 1, 1, .5 );
 	}
 

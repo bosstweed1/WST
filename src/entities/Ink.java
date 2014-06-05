@@ -5,11 +5,11 @@ import org.newdawn.slick.opengl.Texture;
 public class Ink extends Shape
 {
 	boolean removeMe = false;
-	private int effectType = -1;
 	private int shapeType = 13;
-	public Ink ( double x, double y, double width, double height )
+	public Ink ( double x, double y, double width, double height, Texture [] textureString )
 	{
 		super( x, y, width, height );
+		this.myTextureArray = textureString;
 		this.setColor( 1, 1, 1 );
 	}
 

@@ -7,14 +7,13 @@ public class Death extends Shape
 	
 	boolean hit = false;
 	private int shapeType = 2;
-	private int isRock = -1;
 
 	
-	public Death ( double x, double y, double width, double height, int type )
+	public Death ( double x, double y, double width, double height, int type, Texture [] textureString )
 	{
 		super( x, y, width, height );
-		this.setColor( 1, 0, 0 );
-		this.isRock = type; //0 fire 1 rock
+		this.setColor( 1, 1, 1 );
+		this.myTextureArray = textureString;
 	}
 
 	@Override
@@ -34,7 +33,6 @@ public class Death extends Shape
 	{
 		if ( player.hasShield() && !this.getSeen() )
 		{
-			System.out.println("Shield LOST");
 			player.setShield( false ); // Lose Shield
 			this.setSeen( true );
 		}

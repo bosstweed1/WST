@@ -20,9 +20,10 @@ public class Player extends Shape
 
 	public Shape groundPiece;
 
-	public Player ( double x, double y, double width, double height )
+	public Player ( double x, double y, double width, double height, Texture [] textureString )
 	{
 		super( x, y, width, height );
+		this.myTextureArray = textureString;
 		this.setColor( 0, 1, 0 );
 	}
 

@@ -22,13 +22,13 @@ public abstract class Shape
 	private double dx, dy, x, y, width, height;
 	private double r = 1, g = 1, b = 1;
 	
-	private int timer, textureDuration;
+	private int timer, textureDuration = 10;
 	
 	private String textureString;
 	
 	private Texture pic;					// for drawing in the level editor
 	
-	private Texture [] myTextureArray;
+	protected Texture [] myTextureArray;
 
 	private boolean alreadySeen = false;
 	
@@ -46,22 +46,25 @@ public abstract class Shape
 	public int draw()
 	{
 		textureStart();
-		/*
-		// If we are beyond the bounds of the animation array, loop TODO: to keep the last image we have to keep adding and subtracting 1, this blows
-		if ( ( timer / textureDuration ) >= myTextureArray.length  )
+		if ( myTextureArray != null )
 		{
-			timer = 0;
+			// If we are beyond the bounds of the animation array, loop TODO: to keep the last image we have to keep adding and subtracting 1, this blows
+			if ( ( timer / textureDuration ) >= myTextureArray.length  )
+			{
+				timer = 0;
+			}
+			
+			setPic ( myTextureArray[timer / textureDuration] );
+			
+			if ( ( timer / textureDuration ) < myTextureArray.length )
+				this.timer++;
+			
+			pic.bind();
 		}
-		
-		setPic ( myTextureArray[timer / textureDuration] );
-		
-		if ( ( timer / textureDuration ) < myTextureArray.length )
-			this.timer++;
-		*/
 		textureVertices();
 		
-		//return ( timer / textureDuration );
-		return 0;
+		return ( timer / textureDuration );
+		//return 0;
 		
 	}
 
@@ -99,7 +102,7 @@ public abstract class Shape
 	public void textureVertices()
 	{
 		
-		//pic.bind();
+		
 		glBegin( GL_QUADS );
 		
 		glTexCoord2f( 0, 0 );
@@ -117,12 +120,15 @@ public abstract class Shape
 
 	public void drawHitbox()
 	{
-		glBegin( GL_LINE_LOOP );
-		glVertex2d( x, y );
-		glVertex2d( x + width, y );
-		glVertex2d( x + width, y + height );
-		glVertex2d( x, y + height );
-		glEnd();
+		if ( myTextureArray == null )
+		{
+			glBegin( GL_LINE_LOOP );
+			glVertex2d( x, y );
+			glVertex2d( x + width, y );
+			glVertex2d( x + width, y + height );
+			glVertex2d( x, y + height );
+			glEnd();
+		}
 	}
 
 	public boolean contains( Shape other )

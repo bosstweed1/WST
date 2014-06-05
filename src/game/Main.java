@@ -11,6 +11,8 @@ import static org.lwjgl.opengl.GL11.glOrtho;
 import java.awt.Font;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
 import org.newdawn.slick.util.ResourceLoader;
 
+import entities.Background;
 import entities.Bullet;
 import entities.Coin;
 import entities.Death;
@@ -61,6 +64,33 @@ public class Main
 	
 	private static State state = State.INTRO;
 	
+	// All the textures used in the game
+	
+	public static Texture[] fireball = new Texture[1];
+	public static Texture[] rock00 = new Texture[1];
+	public static Texture[] rock10 = new Texture[1];
+	public static Texture[] rock20 = new Texture[1];
+	public static Texture[] shield = new Texture[1];
+	public static Texture[] bullet = new Texture[1];
+	public static Texture[] mana = new Texture[1];
+	public static Texture[] wall = new Texture[1];
+	public static Texture[] background = new Texture[1];
+	public static Texture[] ink = new Texture[1];
+	public static Texture[] octopus = new Texture [1];
+	public static Texture[] gun = new Texture[1];
+	public static Texture[] inker = new Texture[1];
+	public static Texture[] shieldEffect = new Texture[1];
+	public static Texture[] gunEffect = new Texture[1];
+	public static Texture[] inkEffect = new Texture[1];
+	
+	
+	public static Texture[][] rock = new Texture[3][1];
+	public static Texture[][] effect = new Texture[3][1];
+	
+	
+	public static Map<String,Texture[]> textureMap = createTextureMap();
+	
+	
 	private ArrayList<Integer> leaderboard = new ArrayList<Integer>();
 	private ArrayList<String> leaderboardNames = new ArrayList<String>();
 	
@@ -70,6 +100,7 @@ public class Main
 	
 	// Level variables
 	
+	private Background theBackground;
 	private Death [] rockObjects = new Death[5];
 	private Death [] fireObjects = new Death[5];
 	private Wall [] wallObjects = new Wall[2];
@@ -84,6 +115,18 @@ public class Main
 	private int inkIndex = 0;
 	private int bulletIndex = 0;
 	private ArrayList<Shape[]> shapes = new ArrayList<Shape[]>();
+	
+	//Sounds
+	private Audio[] shieldSounds = new Audio[3];
+	private Audio[] gunSounds = new Audio[2];
+	private Audio[] inkSounds = new Audio[1];
+	private Audio[] deathSounds = new Audio[1];
+	private Audio[] introSound = new Audio[1];
+	private Audio fireSound;
+	private Audio rockSound;
+	
+	//instruction sounds
+	
 	
 	private static Map<Integer,String> coinPatternMap = createCoinPatternMap();
 
@@ -142,14 +185,92 @@ public class Main
 		new Main();
 	}
 	
+	/* createTextureMap()
+	 * 		Create and initialize our texture map and textures
+	*/
+	private static Map<String,Texture[]> createTextureMap()
+	{
+		
+		HashMap<String,Texture[]> tempMap = new HashMap<String,Texture[]>();
+		
+		tempMap.put( "fireball", fireball);
+		tempMap.put( "rock0", rock00);
+		tempMap.put( "rock1", rock10);
+		tempMap.put( "rock2", rock20);
+		tempMap.put( "shield", shield);
+		tempMap.put( "bullet", bullet);
+		tempMap.put( "mana", mana);
+		tempMap.put( "wall", wall);
+		tempMap.put( "background", background );
+		tempMap.put( "ink", ink );
+		tempMap.put( "octopus", octopus );
+		tempMap.put( "gun", gun );
+		tempMap.put( "inker", inker );
+		tempMap.put( "shieldEffect", shieldEffect );
+		tempMap.put( "gunEffect", gunEffect );
+		tempMap.put( "inkEffect", inkEffect );
+			
+		return ( Collections.unmodifiableMap(tempMap) );
+	}
+	
+	
+	/* loadAllTextures()
+	 * 		This will load the textures in an efficient way into the map
+	 */
+	private static void loadAllTextures( Map<String,Texture[]> textMap )
+	{
+		for ( Map.Entry<String, Texture[]> entry : textMap.entrySet() )
+		{
+			int size = entry.getValue().length;
+			String currEntry = entry.getKey();
+			
+			for ( int i = 0; i < size; i++ )
+				entry.getValue()[i] = loadTexture(currEntry + "/" + currEntry + i);
+		}
+	}
+	
+	/* loadTexture
+	 * 		Use TextureLoader to load all of the games images
+	 * 
+	 */
+	public static Texture loadTexture( String key )
+	{
+		try
+		{
+			return TextureLoader.getTexture( "png", new FileInputStream( new File( "res/img/" + key + ".png" ) ) );
+		}
+		catch ( FileNotFoundException e )
+		{
+			e.printStackTrace();
+		}
+		catch ( IOException e )
+		{
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+	
+	
 	/* Main object that will initialze the game
 	 * 
 	 */
 	public Main()
 	{
+		initSounds();
 		initGL();
 		initFonts();
 		initLeaderboard();
+		loadAllTextures( textureMap );
+		
+		rock[0] = rock00;
+		rock[1] = rock10;
+		rock[2] = rock20;
+		
+		effect[0] = shieldEffect;
+		effect[1] = gunEffect;
+		effect[2] = inkEffect;
+		
 		
 		// Main Game Shell Loop
 		while (!Display.isCloseRequested())
@@ -165,6 +286,52 @@ public class Main
 		Display.destroy();
 		System.exit(0);
 		
+	}
+	
+	
+	/* initSounds
+	 * 		Loads the sound effects and music
+	 * 		TODO: add more sounds
+	 */
+	private void initSounds() 
+	{
+		try 
+		{
+			
+			//Sounds
+			shieldSounds[0] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/shieldForArgus.wav"));
+			shieldSounds[1] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/shieldsUp.wav"));
+			shieldSounds[2] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/truthIsMyShield.wav"));
+			
+			gunSounds[0] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/hugeGun.wav"));
+			
+			gunSounds[1] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/lockedAndLoaded.wav"));
+			
+			inkSounds[0] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/iFeelIcky.wav"));
+			
+			deathSounds[0] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/millhouseDeath.wav"));
+
+			introSound[0] = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/wellMet.wav"));
+			
+			fireSound = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/playWithFire.wav"));
+			
+			rockSound = AudioLoader.getAudio("WAV",
+					ResourceLoader.getResourceAsStream("res/sounds/wav/handleIt.wav"));
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+
 	}
 	
 	/* initLeaderboard
@@ -472,6 +639,7 @@ public class Main
 	 */
 	private void drawLevel() 
 	{
+		theBackground.draw();
 		drawInfoBar();
 		
 		drawAndUpdatePlayerAndEffects();
@@ -522,20 +690,20 @@ public class Main
 		if ( theShield != null )
 		{
 			theShield.draw();
-			theShield.drawHitbox();
+			
 		}
 		
+		/*
 		if ( theGun != null )
 		{
 			theGun.draw();
-			theGun.drawHitbox();
 		}
-		
+
 		if ( theInker != null )
 		{
 			theInker.draw();
-			theInker.drawHitbox();
 		}
+		*/
 		
 		if ( theEffect[0] != null && theEffect[0].getY() > HEIGHT )
 			theEffect[0] = null;
@@ -561,7 +729,7 @@ public class Main
 			theShield = null;
 		
 		if ( thePlayer.hasGun() )
-			theGun.setX( thePlayer.getX() - 3 );
+			theGun.setX( thePlayer.getX() );
 		else
 			theGun = null;
 		
@@ -597,7 +765,7 @@ public class Main
 				bulletObjects[i].setY( bulletObjects[i].getY() - 4 );
 				
 				bulletObjects[i].draw();
-				bulletObjects[i].drawHitbox();
+				
 				
 				if ( bulletObjects[i].getY() < -4 )
 				{
@@ -612,7 +780,7 @@ public class Main
 				inkObjects[i].setY( inkObjects[i].getY() + 1 );
 				
 				inkObjects[i].draw();
-				inkObjects[i].drawHitbox();
+				
 				
 				if ( inkObjects[i].getY() > HEIGHT + 16 )
 				{
@@ -643,24 +811,15 @@ public class Main
 
 			// Draw coins
 			if ( !coinObjects[i].getRemoval() )
-			{
 				coinObjects[i].draw();
-				coinObjects[i].drawHitbox();
-			}
 			
 			// Draw rocks
 			if ( !rockObjects[i].getSeen() )
-			{
 				rockObjects[i].draw();
-				rockObjects[i].drawHitbox();
-			}
 			
 			// Draw fire objects
 			if ( !fireObjects[i].getSeen() )
-			{
 				fireObjects[i].draw();
-				fireObjects[i].drawHitbox();
-			}
 			
 		}
 		
@@ -684,7 +843,10 @@ public class Main
 		Integer xPos = Math.abs( rng.nextInt() % (WIDTH - 80 ) );
 		
 		if ( thePlayer.getEffectStatus() )
-			theEffect[0] = new Effect( xPos + 32, -16, 16, 16, Math.abs( rng.nextInt() % 3 ) );
+		{
+			int rand = Math.abs( rng.nextInt() % 3 );
+			theEffect[0] = new Effect( xPos + 32, -16, 16, 16, rand, effect[rand] );
+		}
 			
 		
 	}
@@ -696,18 +858,45 @@ public class Main
 	private void setDeathShape( int type, Shape [] array ) 
 	{
 		Random rng = new Random();
+		int startX = 80;
+		int inc = 96;
 		
-		for ( int i = 0; i < 5; i++ )
+		if ( thePlayer.hasGun() && type == 1 && rng.nextInt() % 2 == 1 )
 		{
-			Integer rand = rng.nextInt();
-			Integer xPos = Math.abs( rand % ( WIDTH - 80 ) );
+			// HANDLE IT!
+			rockSound.playAsSoundEffect(1, 1, false);
+			array[0] = new Death(  startX , -16, 16, 16, 1, rock[0] );
+			array[1] = new Death(  startX + inc, -16, 16, 16, 1, rock[0] );
+			array[2] = new Death(  startX + inc * 2, -16, 16, 16, 1, rock[0] );
+			array[3] = new Death(  startX + inc * 3, -16, 16, 16, 1, rock[0] );
+			array[4] = new Death(  startX + inc * 4, -16, 16, 16, 1, rock[0] );
 			
-			// If we want a new random rock 
-			if ( type == 1)
-				array[i] = new Death(  xPos + 32, (-16) - i * (HEIGHT / 5), 16, 16, 1 );
-			else
-				array[i] = new Death(  xPos + 32, HEIGHT + 16 + i * (HEIGHT / 5), 16, 16, 0 );
+		}
+		else if ( thePlayer.hasInk() && type == 0 && rng.nextInt() % 2 == 1 )
+		{
+			
+			// DO YOU LIKE TO PLAY WITH FIRE!!!
+			fireSound.playAsSoundEffect(1, 1, false);
+			array[0] = new Death(  startX , HEIGHT + 16, 16, 16, 1, fireball );
+			array[1] = new Death(  startX + inc, HEIGHT + 16, 16, 16, 1, fireball );
+			array[2] = new Death(  startX + inc * 2, HEIGHT + 16, 16, 16, 1, fireball );
+			array[3] = new Death(  startX + inc * 3, HEIGHT + 16, 16, 16, 1, fireball );
+			array[4] = new Death(  startX + inc * 4, HEIGHT + 16, 16, 16, 1, fireball );
+		}
+		else
+		{
+			for ( int i = 0; i < 5; i++ )
+			{
+				Integer rand = rng.nextInt();
+				Integer xPos = Math.abs( rand % ( WIDTH - 80 ) );
 				
+				// If we want a new random rock 
+				if ( type == 1)
+					array[i] = new Death(  xPos + 32, (-16) - i * (HEIGHT / 5), 16, 16, 1, rock[ Math.abs(rng.nextInt() %3)] );
+				else
+					array[i] = new Death(  xPos + 32, HEIGHT + 16 + i * (HEIGHT / 5), 16, 16, 0, fireball);
+					
+			}
 		}
 	}
 	
@@ -734,7 +923,7 @@ public class Main
 		
 		if ( init )
 			for ( int i = 0; i < coinObjects.length; i++ )
-				coinObjects[i] = new Coin( ( startingX - ( 8 * i ) ), -largeHInc * i, 8, 8 );
+				coinObjects[i] = new Coin( ( startingX - ( 8 * i ) ), -largeHInc * i, 8, 8, mana );
 		
 		String patternString = coinPatternMap.get( pattern );
 		/*
@@ -902,7 +1091,7 @@ public class Main
 			if ( pressed( Keyboard.KEY_UP ) && MM_row > 1)
 			{
 				MM_row--;
-				// TODO: add transparancy box around selections to move up and down for selections
+				// TODO: add transparency box around selections to move up and down for selections
 			} 
 			else if ( pressed( Keyboard.KEY_DOWN ) && MM_row < 3 )
 			{
@@ -915,6 +1104,7 @@ public class Main
 				{
 					initLevel();
 					state = State.LEVEL;
+					introSound[0].playAsSoundEffect(1, 1, false);
 				}
 				else if ( MM_row == 2 )
 					state = State.LEADERBOARD;
@@ -951,7 +1141,7 @@ public class Main
 				{
 					if ( bulletObjects[bulletIndex] == null )
 					{
-						bulletObjects[bulletIndex] = theGun.shoot();
+						bulletObjects[bulletIndex] = theGun.shoot( bullet );
 						bulletIndex++;
 					}
 				}
@@ -960,7 +1150,7 @@ public class Main
 				{
 					if ( inkObjects[inkIndex] == null )
 					{
-						inkObjects[inkIndex] = theInker.shoot();
+						inkObjects[inkIndex] = theInker.shoot( ink );
 						inkIndex++;
 					}
 				}
@@ -982,6 +1172,7 @@ public class Main
 				if ( P_row == 1 )
 				{
 					state = State.LEVEL;
+					
 				}
 				else if ( P_row == 2 )
 				{
@@ -1026,9 +1217,11 @@ public class Main
 	private void initLevel() 
 	{
 		// Initialize Level objects
-		thePlayer = new Player( (WIDTH / 2) - 16, ( ( 3 * HEIGHT ) / 5 ), 32, 32 );
-		wallObjects[0] = new Wall( 0, 0, 32, HEIGHT );
-		wallObjects[1] = new Wall( WIDTH - 32, 0, 32, HEIGHT );
+		
+		theBackground = new Background( 0, 0, WIDTH, HEIGHT, background );
+		thePlayer = new Player( (WIDTH / 2) - 16, ( ( 3 * HEIGHT ) / 5 ), 32, 32, octopus );
+		wallObjects[0] = new Wall( 0, 0, 32, HEIGHT, wall );
+		wallObjects[1] = new Wall( WIDTH - 32, 0, 32, HEIGHT, wall );
 		theEffect[0] = null;
 		setCoinShape( true );
 		theShield = null;
@@ -1152,13 +1345,32 @@ public class Main
 					
 					if ( thisShape != null && intersected )
 					{
-						if ( thisShape.getShapeType() == 3 )
-							theShield = new Shield ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6 );
-						else if ( thisShape.getShapeType() == 4 )
-							theGun = new Gun ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6 );
-						else if ( thisShape.getShapeType() == 5 )
-							theInker = new Inker ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6 );
+						Random r = new Random();
+						if ( thisShape.getShapeType() == 3 && theShield == null )
+						{
+							theShield = new Shield ( thePlayer.getX() - 3 , thePlayer.getY() - 3, thePlayer.getWidth() + 6, thePlayer.getHeight() + 6, shield );
+							
+							shieldSounds[Math.abs(r.nextInt()%3)].playAsSoundEffect(1, 1, false);
+						}
+						else if ( thisShape.getShapeType() == 4 && theGun == null )
+						{
 
+							gunSounds[Math.abs(r.nextInt()%2)].playAsSoundEffect(1, 1, false);
+							theGun = new Gun ( thePlayer.getX() , thePlayer.getY(), thePlayer.getWidth(), thePlayer.getHeight(), gun );
+							thePlayer.setTextureArray( gun );
+							theInker = null;
+							thePlayer.setInk( false );
+						}
+						else if ( thisShape.getShapeType() == 5 && theInker == null)
+						{
+							theInker = new Inker ( thePlayer.getX() , thePlayer.getY(), thePlayer.getWidth(), thePlayer.getHeight(), inker );
+							inkSounds[0].playAsSoundEffect(1, 1, false);
+							thePlayer.setTextureArray( inker );
+							theGun = null;
+							thePlayer.setGun( false );
+						}
+						thisShape = null;
+							
 					}
 					
 					// Check bullet intersections
@@ -1171,7 +1383,6 @@ public class Main
 							if ( bulletObjects[j] != null && !thisShape.getSeen() && 
 									 bulletObjects[j].intersects( thisShape ) )
 							{
-								System.out.println("Removed object");
 								thisShape.setSeen( true );
 								bulletObjects[j] = null;
 								counter++;
@@ -1210,6 +1421,7 @@ public class Main
 		{
 			state = State.LOSE;
 			L_row = 1;
+			deathSounds[0].playAsSoundEffect(1, 1, false);
 		}
 		
 	}
